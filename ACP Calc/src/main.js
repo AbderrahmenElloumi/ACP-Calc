@@ -4,6 +4,13 @@ let InputLines;
 let InputColumns;
 let MatrixContainer;
 
+let m;
+let res;
+
+async function acp_calc() {
+  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+  greetMsgEl.textContent = await invoke("acp", { matrix: m.value, threshold: "" });
+}
 
 window.addEventListener("DOMContentLoaded", () => {
   InputLines = document.querySelector("#lines");
@@ -13,6 +20,21 @@ window.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#size-form").addEventListener("submit", (e) => {
     e.preventDefault();
     generateMatrix();
+  });
+
+  m = [];
+  for (let i = 0; i < parseInt(InputLines.value); i++) {
+    m[i] = [];
+    for(let j = 0; j < parseInt(InputColumns.value); j++) {
+      m[i][j] = parseFloat(MatrixContainer.querySelector(`input[name="cell-${i}-${j}"]`).value);
+      console.log(`m[${i}][${j}] = ${m[i][j]}`);
+    }
+  }
+  res = document.querySelector("#result");
+  document.querySelector("#matrix-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    console.log("Matrix m:", m);
+    acp_calc();
   });
 });
 
