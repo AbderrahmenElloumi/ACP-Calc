@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 #TODO: Make GUI for input
 #TODO: Think up a way to handle input dynamically
