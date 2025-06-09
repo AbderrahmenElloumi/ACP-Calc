@@ -4,39 +4,8 @@ let InputLines;
 let InputColumns;
 let MatrixContainer;
 
-let m;
+let m = [];
 let res;
-
-async function acp_calc() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsgEl.textContent = await invoke("acp", { matrix: m.value, threshold: "" });
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-  InputLines = document.querySelector("#lines");
-  InputColumns = document.querySelector("#columns");
-  MatrixContainer = document.querySelector("#matrix");
-
-  document.querySelector("#size-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    generateMatrix();
-  });
-
-  m = [];
-  for (let i = 0; i < parseInt(InputLines.value); i++) {
-    m[i] = [];
-    for(let j = 0; j < parseInt(InputColumns.value); j++) {
-      m[i][j] = parseFloat(MatrixContainer.querySelector(`input[name="cell-${i}-${j}"]`).value);
-      console.log(`m[${i}][${j}] = ${m[i][j]}`);
-    }
-  }
-  res = document.querySelector("#result");
-  document.querySelector("#matrix-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    console.log("Matrix m:", m);
-    acp_calc();
-  });
-});
 
 function generateMatrix() {
   const rows = parseInt(InputLines.value);
@@ -64,3 +33,39 @@ function generateMatrix() {
 
   MatrixContainer.appendChild(table);
 }
+
+async function acp_calc() {
+  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+  const response = await invoke("acp", { matrix: JSON.stringify(m), threshold: "" });
+
+  const output = JSON.parse(response);
+  console.log("ACP Result:", output);
+  res.textContent = JSON.stringify(output, null, 2); 
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  InputLines = document.querySelector("#lines");
+  InputColumns = document.querySelector("#columns");
+  MatrixContainer = document.querySelector("#matrix");
+  res = document.querySelector("#result");
+
+  document.querySelector("#size-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    generateMatrix();
+  });
+
+  document.querySelector("#matrix-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    for (let i = 0; i < parseInt(InputLines.value); i++) {
+      m[i] = [];
+      for(let j = 0; j < parseInt(InputColumns.value); j++) {
+        m[i][j] = parseFloat(MatrixContainer.querySelector(`input[name="cell-${i}-${j}"]`).value);
+        console.log(`m[${i}][${j}] = ${m[i][j]}`);
+      }
+    }
+
+    console.log("Matrix m:", m);
+    acp_calc();
+  });
+});
