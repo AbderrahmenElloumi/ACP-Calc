@@ -31,7 +31,19 @@
       
       <div id="thresh-res"></div>
       
-      <p>Pick matrix size:</p>
+      <p>
+        <span>Load your matrix directly by importing data</span>
+        <br><span style="font-size: smaller;">Supported formats: CSV, XLSX, JSON, XML, TXT</span>
+      </p>
+      <div class="row">
+        <input type="file" id="file-input" accept=".csv,.xlsx,.json,.xml,.txt"/>
+        <button id="load-file">Load Matrix</button>
+      </div>
+      
+      <p>
+        <span>Or input a matrix manually</span>
+        <br><span style="font-size: smaller;">Enter the number of lines and columns, then fill the matrix</span>
+      </p>
       <form class="row" id="size-form">
         <input type="number" value=2 id="lines"/>
         <input type="number" value=3 id="columns"/>
@@ -65,7 +77,10 @@
           />
         </a>
 
-        <a>
+        <a
+          href="https://www.linkedin.com/in/abderrahmen-elloumi/"
+          target="_blank"
+        >
           <img
             src="/assets/LinkedIn.svg"
             class="logo linkedin"

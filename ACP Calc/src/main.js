@@ -145,6 +145,40 @@ function renderResult(resultData) {
   });
 }
 
+async function loadMatrixFile() {
+  const fileInput = document.querySelector('#file-input');
+  const file = fileInput.files[0];
+  console.log("-------------")
+  console.log("File input value:", fileInput.value);
+  console.log("-------------")
+  console.log("Selected file:", file);
+  console.log("File path:", file ? file.path : "No file selected");
+  if (!file) {
+    res.textContent = "Please select a file";
+    return;
+  }
+
+  try {
+    const matrix = await invoke("load_matrix_file", { path: file.path });
+    m = JSON.parse(matrix);
+    
+    // Update UI with loaded matrix
+    InputLines.value = m.length;
+    InputColumns.value = m[0].length;
+    generateMatrix();
+    
+    // Fill in the values
+    m.forEach((row, i) => {
+      row.forEach((val, j) => {
+        MatrixContainer.querySelector(`input[name="cell-${i}-${j}"]`).value = val;
+      });
+    });
+  } catch (error) {
+    console.error("File loading error:", error);
+    res.textContent = `Error loading file: ${error}`;
+  }
+}
+
 async function acp_calc() {
   // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
   try {
@@ -177,6 +211,11 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     Threshold.value = thresholdValue.toFixed(5); // format to 5 decimal places
     ThreshRes.textContent = `Threshold set to ${Threshold.value}`;
+  });
+  
+  document.querySelector("#load-file").addEventListener("click", (e) => {
+    e.preventDefault();
+    loadMatrixFile();
   });
 
   document.querySelector("#size-form").addEventListener("submit", (e) => {

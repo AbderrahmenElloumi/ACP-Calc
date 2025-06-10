@@ -1,4 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+mod parser;
+
+use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -45,11 +48,18 @@ fn acp(matrix: String, mut threshold: String) -> Result<AcpOutput, String> {
     Ok(structured)
 }
 
+#[tauri::command]
+fn load_matrix_file(path: String) -> Result<String, String> {
+    let path = PathBuf::from(path);
+    let matrix = parser::parse_file(&path)?;
+    serde_json::to_string(&matrix).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![acp])
+        .invoke_handler(tauri::generate_handler![acp, load_matrix_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
