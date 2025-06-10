@@ -1,15 +1,12 @@
-.logo.froggie:hover {
-  filter: drop-shadow(0 0 1em #ffe21c);
-}
 :root {
   font-family: 'FiraCode Nerd Font', Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
-
+  
   color: #0f0f0f;
   background-color: #f6f6f6;
-
+  
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -27,19 +24,43 @@
 }
 
 .logo {
-  height: 6em;
+  height: 3em;
+  /* border: solid 1px #f6f6f6; */ /* Uncomment for debugging */
   padding: 1.5em;
   will-change: filter;
   transition: 0.75s;
 }
 
+.logo.froggie:hover {
+  filter: drop-shadow(0 0 1em #e30d3f);
+}
+.logo.froggie {
+  height: 2em;
+  padding-top: 2em; /* Adjusted for better centering */
+}
+
 .logo.github:hover {
-  filter: drop-shadow(0 0 1em #24c8db);
+  filter: drop-shadow(0 0 1em #2fbb4f);
+}
+
+.logo.linkedin {
+  height: 2em;
+  padding-top: 2em; /* Adjusted for better centering */
+}
+
+.logo.linkedin:hover {
+  filter: drop-shadow(0 0 1em #0072b1);
 }
 
 .row {
   display: flex;
   justify-content: center;
+}
+
+#footer {
+  margin-top: 20px;
+  font-size: 0.8em;
+  border-top: solid 0.25px #24c8db;
 }
 
 #matrix {

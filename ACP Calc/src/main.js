@@ -171,7 +171,8 @@ window.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     const thresholdValue = parseFloat(Threshold.value);
     if (isNaN(thresholdValue) || thresholdValue <= 0) {
-      ThreshRes.textContent = "Please enter a valid positive number for the threshold.";
+      ThreshRes.textContent = "Please enter a valid positive number for the threshold.<br>0 < threshold < 1.";
+      ThreshRes.innerHTML = ThreshRes.textContent; // Convert to HTML to allow line breaks
       return;
     }
     Threshold.value = thresholdValue.toFixed(5); // format to 5 decimal places
