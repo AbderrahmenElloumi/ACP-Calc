@@ -1,7 +1,5 @@
 
-#TODO: Make GUI for input
-#TODO: Think up a way to handle input dynamically
-#TODO: Configure the existing code to handle automation better 
+#TODO: Look for better styling and formatting
 #TODO: Look for // Optimisation
 
 
