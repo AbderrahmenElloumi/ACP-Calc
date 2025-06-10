@@ -94,14 +94,14 @@ tol = float(sys.argv[2])
 
 
 dfM = create_dynamic_df(M, n, p, "Individu ", "X")
-l["----------Matrice de départ----------"] = dfM
+l["Matrice de départ"] = dfM
 
 
 #*Centrage et réduction de la matrice de données
 Moyenne = [np.mean(M, axis=0).round(3)]
 Ecart_type = [np.std(M, axis=0).round(3)]
-l["----------Vecteurs Moyennes----------"] = create_dynamic_df(Moyenne, 1, p, "Moyenne ", "X")
-l["----------Vecteurs Ecart-types----------"] = create_dynamic_df(Ecart_type, 1, p, "Ecart-Type ", "X")
+l["Vecteurs Moyennes"] = create_dynamic_df(Moyenne, 1, p, "Moyenne ", "X")
+l["Vecteurs Ecart-types"] = create_dynamic_df(Ecart_type, 1, p, "Ecart-Type ", "X")
 
 li = np.where(Ecart_type[0] == 0)
 if np.any(Ecart_type[0] == 0):
@@ -111,14 +111,14 @@ if np.any(Ecart_type[0] == 0):
 Z = (M - Moyenne) / Ecart_type
 Z = np.round(Z, 2)
 dfZ = create_dynamic_df(Z, n, p, "Individu ", "X")
-l["-----------Matrice centrée Réduite----------"] = dfZ
+l["Matrice centrée Réduite"] = dfZ
 
 
 #*Matrice de corrélation
 R = cov(Z) #Corrélation = Covariance après centrage et réduction
 R = np.round(R, 2)
 dfR = create_dynamic_df(R, p, p, "X", "X")
-l["-----------Matrice de Corrélation----------"] = dfR
+l["Matrice de Corrélation"] = dfR
 
 
 #*Calcul des valeurs propres et vecteurs propres
@@ -129,28 +129,28 @@ vecteurs_propres = vecteurs_propres[:, ordre]
 
 
 dfV = create_dynamic_df(valeurs_propres, p, 1, "Valeur propre ", "")
-l["-----------Valeurs propres----------"] = dfV.round(2)
+l["Valeurs propres"] = dfV.round(2)
 
 
 
 #*Matrice Q
-l["-----------Normes des Vecteurs propres----------"] = create_dynamic_df(np.linalg.norm(vecteurs_propres, axis=0).round(3), p, 1, "Norme ", "V.P. ")
+l["Normes des Vecteurs propres"] = create_dynamic_df(np.linalg.norm(vecteurs_propres, axis=0).round(3), p, 1, "Norme ", "V.P. ")
 Q = vecteurs_propres
 Q = np.round(Q, 2)
 dfQ = create_dynamic_df(Q, p, p, "", "V.P. ")
-l["-----------Matrice Q----------"] = dfQ
+l["Matrice Q"] = dfQ
 
 
 #*Nouvelle Matrice de données
 Y = np.dot(Z, Q)
 Y = np.round(Y, 3)
 dfY = create_dynamic_df(Y, n, p, "Individu ", "X")
-l["-----------Nouvelle matrice de données----------"]  = dfY
+l["Nouvelle matrice de données"]  = dfY
 
 
 #*Matrice après restriction
-dfY, l["----------Suppression----------"] = restrict(dfY, valeurs_propres, tol, "X")
-l["-----------Matrice après restriction----------"] = dfY
+dfY, l["Suppression"] = restrict(dfY, valeurs_propres, tol, "X")
+l["Matrice après restriction"] = dfY
 
 json_output(l)
 

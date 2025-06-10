@@ -52,10 +52,16 @@ function renderResult(resultData) {
 
     // If it's a matrix/table section
     if (content.columns && content.data && content.index) {
+      // Create toggle button
+      const toggleButton = document.createElement("button");
+      toggleButton.textContent = "Show Table";
+      section.appendChild(toggleButton);
+
       const table = document.createElement("table");
       table.style.borderCollapse = "collapse";
       table.style.border = "1px solid black";
       table.style.margin = "auto";
+      table.style.display = "none"; // Initially hidden
 
       const thead = document.createElement("thead");
       const headerRow = document.createElement("tr");
@@ -93,16 +99,46 @@ function renderResult(resultData) {
 
       table.appendChild(tbody);
       section.appendChild(table);
+
+      // Add click toggle logic
+      toggleButton.addEventListener("click", () => {
+        if (table.style.display === "none") {
+          table.style.display = "table";
+          toggleButton.textContent = "Hide Table";
+        } else {
+          table.style.display = "none";
+          toggleButton.textContent = "Show Table";
+        }
+      });
     }
     // If it's a list of messages
     else if (Array.isArray(content)) {
+      // Create toggle button
+      const toggleButton = document.createElement("button");
+      toggleButton.textContent = "Show Actions";
+      section.appendChild(toggleButton);
+
       const ul = document.createElement("ul");
+      ul.style.listStyleType = "none"; // Remove default list styling
+      ul.style.margin = "auto";
+      ul.style.display = "none"; // Initially hidden
       content.forEach((line) => {
         const li = document.createElement("li");
         li.textContent = line;
         ul.appendChild(li);
       });
       section.appendChild(ul);
+
+      // Add click toggle logic
+      toggleButton.addEventListener("click", () => {
+        if (ul.style.display === "none") {
+          ul.style.display = "table";
+          toggleButton.textContent = "Hide Actions";
+        } else {
+          ul.style.display = "none";
+          toggleButton.textContent = "Show Actions";
+        }
+      });   
     }
 
     res.appendChild(section);
