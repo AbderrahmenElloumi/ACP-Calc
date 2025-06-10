@@ -19,6 +19,43 @@ enum SectionContent {
 #[derive(Serialize, Deserialize)]
 struct AcpOutput(pub HashMap<String, SectionContent>);
 
+#[tauri::command]
+async fn load_matrix_with_dialog(app_handle: tauri::AppHandle) -> Result<String, String> {
+    use tauri_plugin_dialog::DialogExt;
+    use std::sync::{Arc, Mutex};
+    use tokio::sync::oneshot;
+    
+    let (tx, rx) = oneshot::channel();
+    let tx = Arc::new(Mutex::new(Some(tx)));
+    
+    app_handle
+        .dialog()
+        .file()
+        .add_filter("CSV files", &["csv"])
+        .add_filter("Excel files", &["xlsx", "xls"])
+        .add_filter("JSON files", &["json"])
+        .add_filter("XML files", &["xml"])
+        .add_filter("Text files", &["txt"])
+        .add_filter("All files", &["*"])
+        .pick_file(move |file_path| {
+            if let Some(sender) = tx.lock().unwrap().take() {
+                let _ = sender.send(file_path);
+            }
+        });
+    
+    match rx.await {
+    Ok(Some(path)) => {
+        if let Some(path_ref) = path.as_path() {
+            let matrix = parser::parse_file(path_ref)?;
+            serde_json::to_string(&matrix).map_err(|e| e.to_string())
+        } else {
+            Err("Invalid file path".to_string())
+        }
+    }
+    Ok(None) => Err("No file selected".to_string()),
+    Err(_) => Err("Dialog error".to_string()),
+}
+}
 
 #[tauri::command]
 fn acp(matrix: String, mut threshold: String) -> Result<AcpOutput, String> {
@@ -59,7 +96,8 @@ fn load_matrix_file(path: String) -> Result<String, String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![acp, load_matrix_file])
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![acp, load_matrix_file, load_matrix_with_dialog])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

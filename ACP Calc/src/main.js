@@ -3,6 +3,8 @@ const { invoke } = window.__TAURI__.core;
 let Threshold;
 let ThreshRes;
 
+let ResWarning;
+
 let InputLines;
 let InputColumns;
 let MatrixContainer;
@@ -145,21 +147,45 @@ function renderResult(resultData) {
   });
 }
 
-async function loadMatrixFile() {
-  const fileInput = document.querySelector('#file-input');
-  const file = fileInput.files[0];
-  console.log("-------------")
-  console.log("File input value:", fileInput.value);
-  console.log("-------------")
-  console.log("Selected file:", file);
-  console.log("File path:", file ? file.path : "No file selected");
-  if (!file) {
-    res.textContent = "Please select a file";
-    return;
-  }
+function ButtonType(resElement, buttonLabel, typeMessage) {
+  const NewButton = document.createElement("button");
+  NewButton.textContent = buttonLabel;
 
+  NewButton.addEventListener("click", (event) => {
+    event.stopPropagation(); // Prevent triggering the parent click
+    resElement.innerHTML = 
+      `Please make sure your <b>${buttonLabel}</b> file is formatted correctly.<br>${typeMessage.replace(/\n/g, '<br>')}`;
+    resElement.dataset.state = "expanded"; // Mark as expanded
+  });
+
+  resElement.appendChild(document.createElement("br")); // Line break before button
+  resElement.appendChild(NewButton);
+}
+
+function showWarning(message) {
+  const ResWarning = document.querySelector("#warning");
+
+  if (ResWarning.dataset.state !== "expanded") {
+    // Clear and prepare new content
+    ResWarning.innerHTML = message.replace(/\n/g, "<br>");
+
+    ButtonType(ResWarning, ".csv", "CSV files should have a header row and values separated by commas.\nFirst row headers are not supported!");
+    ButtonType(ResWarning, ".xlsx", "Excel files should have a header row and values in cells.");
+    ButtonType(ResWarning, ".json", "JSON files should be an array of arrays or an object with arrays as values.");
+    ButtonType(ResWarning, ".txt", "Text files should have values separated by spaces or tabs, with a header row if applicable.");
+    ButtonType(ResWarning, ".xml", "XML files should have a structured format with tags, and can be converted to a matrix format.");
+    
+    ResWarning.dataset.state = "expanded";
+  } else {
+    // Reset to original
+    ResWarning.textContent = "Warning Notes";
+    ResWarning.dataset.state = "collapsed"; // Reset state
+  }
+}
+
+async function loadMatrixWithDialog() {
   try {
-    const matrix = await invoke("load_matrix_file", { path: file.path });
+    const matrix = await invoke("load_matrix_with_dialog");
     m = JSON.parse(matrix);
     
     // Update UI with loaded matrix
@@ -173,6 +199,8 @@ async function loadMatrixFile() {
         MatrixContainer.querySelector(`input[name="cell-${i}-${j}"]`).value = val;
       });
     });
+    
+    res.textContent = "Matrix loaded successfully!";
   } catch (error) {
     console.error("File loading error:", error);
     res.textContent = `Error loading file: ${error}`;
@@ -213,9 +241,16 @@ window.addEventListener("DOMContentLoaded", () => {
     ThreshRes.textContent = `Threshold set to ${Threshold.value}`;
   });
   
+  document.querySelector("#warning").addEventListener("click", (e) => {
+  e.preventDefault();
+  showWarning("Supported Files Types\n");
+});
+
+
+  // Updated to use dialog instead of file input
   document.querySelector("#load-file").addEventListener("click", (e) => {
     e.preventDefault();
-    loadMatrixFile();
+    loadMatrixWithDialog();
   });
 
   document.querySelector("#size-form").addEventListener("submit", (e) => {

@@ -33,12 +33,14 @@
       
       <p>
         <span>Load your matrix directly by importing data</span>
-        <br><span style="font-size: smaller;">Supported formats: CSV, XLSX, JSON, XML, TXT</span>
+        <br><span style="font-size: smaller;">Supported formats: CSV | XLSX | JSON | XML | TXT</span>
       </p>
       <div class="row">
-        <input type="file" id="file-input" accept=".csv,.xlsx,.json,.xml,.txt"/>
-        <button id="load-file">Load Matrix</button>
+        <button id="warning">Warning Notes</button>
+        <p id="warning-res"></p>
       </div>
+
+      <button id="load-file" style="margin: auto;">Choose File</button>
       
       <p>
         <span>Or input a matrix manually</span>
