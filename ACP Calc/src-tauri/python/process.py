@@ -82,10 +82,12 @@ def json_output(data: dict) -> str:
 #*Gérération de la matrice de données
 
 if len(sys.argv) != 3:
-    raise ValueError("Usage: python script.py <matrix>")
+    raise ValueError("Usage: python script.py <matrix_string> <threshold>")
 
 M = matrix_from_js(sys.argv[1])
 n = M.shape[0]
+if n < 2:
+    raise ValueError("The matrix must have at least 2 rows (individuals).")
 p = M.shape[1]
 l = {}
 tol = float(sys.argv[2])
@@ -100,6 +102,12 @@ Moyenne = [np.mean(M, axis=0).round(3)]
 Ecart_type = [np.std(M, axis=0).round(3)]
 l["----------Vecteurs Moyennes----------"] = create_dynamic_df(Moyenne, 1, p, "Moyenne ", "X")
 l["----------Vecteurs Ecart-types----------"] = create_dynamic_df(Ecart_type, 1, p, "Ecart-Type ", "X")
+
+li = np.where(Ecart_type[0] == 0)
+if np.any(Ecart_type[0] == 0):
+    zero_std_columns = [f"X{col + 1}" for col in li[0]]
+    raise ValueError(f"At least one column has zero standard deviation. Cannot perform ACP. Columns: {', '.join(zero_std_columns)}")
+
 Z = (M - Moyenne) / Ecart_type
 Z = np.round(Z, 2)
 dfZ = create_dynamic_df(Z, n, p, "Individu ", "X")
