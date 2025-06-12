@@ -1,4 +1,4 @@
-use calamine::{open_workbook, Reader, Xlsx};
+use calamine::{open_workbook_auto, Reader, DataType};
 use csv::ReaderBuilder;
 use quick_xml::events::Event;
 use quick_xml::reader::Reader as XmlReader;
@@ -10,7 +10,7 @@ use std::path::Path;
 pub fn parse_file(path: &Path) -> Result<Vec<Vec<f64>>, String> {
     match path.extension().and_then(|s| s.to_str()) {
         Some("csv") => parse_csv(path),
-        Some("xlsx") | Some("xls") => parse_excel(path),
+        Some("xlsx") | Some("xls") | Some("ods") | Some("xlsm") => parse_excel_with_serde(path),
         Some("json") => parse_json(path),
         Some("xml") => parse_xml(path),
         Some("txt") => parse_txt(path),
@@ -36,24 +36,84 @@ fn parse_csv(path: &Path) -> Result<Vec<Vec<f64>>, String> {
     Ok(matrix)
 }
 
-fn parse_excel(path: &Path) -> Result<Vec<Vec<f64>>, String> {
-    let mut workbook: Xlsx<_> = open_workbook(path).map_err(|e: calamine::XlsxError| e.to_string())?;
-    let sheet = workbook
+pub fn parse_excel_with_serde<Row>(path: &Path) -> Result<Vec<Row>, String> 
+where
+    Row: serde::de::DeserializeOwned,
+{
+    let mut workbook = open_workbook_auto(path).map_err(|e| e.to_string())?;
+    let range = workbook
         .worksheet_range_at(0)
         .ok_or("No sheets found")?
-        .map_err(|e: calamine::XlsxError| e.to_string())?;
+        .map_err(|e| e.to_string())?;
 
-    let matrix: Result<Vec<Vec<f64>>, _> = sheet
-        .rows()
-        .map(|row| {
-            row.iter()
-                .map(|cell| cell.get_float().ok_or("Invalid number".to_string()))
-                .collect()
-        })
-        .collect();
+    let mut result = Vec::new();
 
-    matrix
+    for (row_idx, row) in range.rows().enumerate() {
+        let stringified: Result<Vec<String>, String> = row.iter().enumerate().map(|(col_idx, cell)| {
+            match cell {
+                DataType::Float(f) => Ok(f.to_string()),
+                DataType::Int(i) => Ok(i.to_string()),
+                DataType::String(s) => {
+                    // Try to parse string as number first
+                    if let Ok(num) = s.parse::<f64>() {
+                        Ok(num.to_string())
+                    } else {
+                        Err(format!(
+                            "Non-numeric string '{}' found at row {}, column {} - expected numeric matrix", 
+                            s, row_idx + 1, col_idx + 1
+                        ))
+                    }
+                },
+                DataType::Empty => Ok("0".to_string()), // You might want to make this configurable
+                DataType::Bool(b) => Err(format!(
+                    "Boolean value '{}' found at row {}, column {} - expected numeric matrix", 
+                    b, row_idx + 1, col_idx + 1
+                )),
+                DataType::Error(e) => Err(format!(
+                    "Excel error '{:?}' found at row {}, column {} - cannot parse", 
+                    e, row_idx + 1, col_idx + 1
+                )),
+                DataType::DateTime(dt) => Err(format!(
+                    "DateTime value '{:?}' found at row {}, column {} - expected numeric matrix", 
+                    dt, row_idx + 1, col_idx + 1
+                )),
+                DataType::DateTimeIso(dt) => Err(format!(
+                    "DateTimeIso value '{}' found at row {}, column {} - expected numeric matrix", 
+                    dt, row_idx + 1, col_idx + 1
+                )),
+                DataType::DurationIso(dur) => Err(format!(
+                    "DurationIso value '{}' found at row {}, column {} - expected numeric matrix", 
+                    dur, row_idx + 1, col_idx + 1
+                )),
+                DataType::Duration(dur) => Err(format!(
+                    "Duration value '{}' found at row {}, column {} - expected numeric matrix", 
+                    dur, row_idx + 1, col_idx + 1
+                )),
+            }
+        }).collect();
+
+        let stringified = stringified?;
+
+        // Deserialize from a CSV-like row
+        let csv_line = stringified.join(",");
+
+        let parsed: Row = match csv::ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(csv_line.as_bytes())
+            .deserialize()
+            .next()
+        {
+            Some(Ok(row)) => row,
+            Some(Err(e)) => return Err(format!("Row {} parse error: {:?}", row_idx + 1, e)),
+            None => return Err(format!("Row {} is empty", row_idx + 1)),
+        };
+
+        result.push(parsed);
+    }
+
+    Ok(result)
 }
+
 
 fn parse_json(path: &Path) -> Result<Vec<Vec<f64>>, String> {
     let mut file = File::open(path).map_err(|e| e.to_string())?;
@@ -86,22 +146,33 @@ fn parse_xml(path: &Path) -> Result<Vec<Vec<f64>>, String> {
     let mut matrix = Vec::new();
     let mut current_row = Vec::new();
     let mut buf = Vec::new();
+    let mut in_row = false;
 
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(ref e)) => {
                 if e.name().as_ref() == b"row" {
+                    in_row = true;
                     current_row = Vec::new();
                 }
             },
             Ok(Event::Text(e)) => {
-                if let Ok(num) = e.unescape().map_err(|e| e.to_string())?.parse::<f64>() {
-                    current_row.push(num);
+                if in_row {
+                    let text = e.unescape().map_err(|e| e.to_string())?;
+                    // Split the text by whitespace and parse each number
+                    for num_str in text.split_whitespace() {
+                        let num = num_str.parse::<f64>()
+                            .map_err(|_| format!("Invalid number: {}", num_str))?;
+                        current_row.push(num);
+                    }
                 }
             },
             Ok(Event::End(ref e)) => {
-                if e.name().as_ref() == b"row" && !current_row.is_empty() {
-                    matrix.push(current_row.clone());
+                if e.name().as_ref() == b"row" {
+                    in_row = false;
+                    if !current_row.is_empty() {
+                        matrix.push(current_row.clone());
+                    }
                 }
             },
             Ok(Event::Eof) => break,
@@ -112,12 +183,6 @@ fn parse_xml(path: &Path) -> Result<Vec<Vec<f64>>, String> {
 
     if matrix.is_empty() {
         return Err("No valid matrix data found in XML".to_string());
-    }
-
-    // Validate that all rows have the same length
-    let row_length = matrix[0].len();
-    if !matrix.iter().all(|row| row.len() == row_length) {
-        return Err("Inconsistent row lengths in XML matrix".to_string());
     }
 
     Ok(matrix)

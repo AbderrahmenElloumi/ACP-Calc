@@ -12,6 +12,7 @@ dependencies = [
  "quick-xml 0.31.0",
  "serde",
  "serde_json",
+ "serde_with",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",

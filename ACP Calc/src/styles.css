@@ -69,6 +69,10 @@
   justify-content: center;
 }
 
+#result {
+  border-top: solid 0.25px #24c8db;
+}
+
 a {
   font-weight: 500;
   color: #646cff;

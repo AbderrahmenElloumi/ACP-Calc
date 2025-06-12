@@ -29,7 +29,7 @@ function generateMatrix() {
       input.type = "number";
       input.step = "any"; // allows decimal input
       input.value = "0"; // default value
-      input.style.width = "60px";
+      input.style.width = "80px";
       input.style.margin = "2px";
       input.name = `cell-${i}-${j}`; // helps identify each cell
       td.appendChild(input);
@@ -170,10 +170,13 @@ function showWarning(message) {
     ResWarning.innerHTML = message.replace(/\n/g, "<br>");
 
     ButtonType(ResWarning, ".csv", "CSV files should have a header row and values separated by commas.\nFirst row headers are not supported!");
-    ButtonType(ResWarning, ".xlsx", "Excel files should have a header row and values in cells.");
-    ButtonType(ResWarning, ".json", "JSON files should be an array of arrays or an object with arrays as values.");
-    ButtonType(ResWarning, ".txt", "Text files should have values separated by spaces or tabs, with a header row if applicable.");
-    ButtonType(ResWarning, ".xml", "XML files should have a structured format with tags, and can be converted to a matrix format.");
+    ButtonType(ResWarning, ".json", "JSON files should strictly be an array of number arrays!");
+    ButtonType(ResWarning, ".xml", "XML files should have a structured format with the proper tags so that it can be converted to a matrix format.\nPlease use <matrix> as the root element and <row> for each row\nFirst row headers are not supported!");
+    ButtonType(ResWarning, ".txt", "Text files should have values separated by spaces or tabs.\nFirst row headers are not supported!");
+    ButtonType(ResWarning, ".ods", "Excel files should have numeric values in cells.\nFirst row headers are not supported!\nEnsure forcing full recalculation of the sheet by clicking Ctrl+Alt+Shift+F9 in your Excel editor.");
+    ButtonType(ResWarning, ".xlsm", "Excel files should have numeric values in cells.\nFirst row headers are not supported!\nEnsure forcing full recalculation of the sheet by clicking Ctrl+Alt+Shift+F9 in your Excel editor.");
+    ButtonType(ResWarning, ".xlsx", "Excel files should have numeric values in cells.\nFirst row headers are not supported!\nEnsure forcing full recalculation of the sheet by clicking Ctrl+Alt+Shift+F9 in your Excel editor.");
+    ButtonType(ResWarning, ".xls", "Excel files should have numeric values in cells.\nFirst row headers are not supported!\nEnsure forcing full recalculation of the sheet by clicking Ctrl+Alt+Shift+F9 in your Excel editor.");
     
     ResWarning.dataset.state = "expanded";
   } else {
