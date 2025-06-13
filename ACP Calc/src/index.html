@@ -57,8 +57,23 @@
         <button type="submit">Calculate</button>
       </form>
       
+      <form id="export-options" style="margin-top: 20px; display: none;">
+        <label for="export-format">Export Format:</label>
+        <select id="export-format">
+          <option value="csv">CSV</option>
+          <option value="json">JSON</option>
+          <option value="xml">XML</option>
+          <option value="txt">TXT</option>
+          <option value="ods">ODS</option>
+          <option value="xlsm">XLSM</option>
+          <option value="xlsx">XLSX</option>
+          <option value="xls">XLS</option>
+        </select>
+        <button type="submit" id="export-button">Export</button>
+      </form>
+
       <div id="result"></div>
-      
+
       <div id="footer" class="row">
         <a href="https://github.com/AbderrahmenElloumi/ACP-Calc" target="_blank">
           <img src="/assets/GithubIcon.svg" 

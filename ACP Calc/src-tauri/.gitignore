@@ -7,3 +7,4 @@
 /gen/schemas
 
 output.json
+exported_matrix.*

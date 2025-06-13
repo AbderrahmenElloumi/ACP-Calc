@@ -44,7 +44,21 @@ function generateMatrix() {
 function renderResult(resultData) {
   res.innerHTML = ""; // Clear old result
 
-  Object.entries(resultData).forEach(([title, content]) => {
+  const keyOrder = ["Matrice de d\u00e9part", 
+                    "Vecteurs Moyennes",
+                    "Vecteurs Ecart-types",
+                    "Matrice centr\u00e9e R\u00e9duite", 
+                    "Matrice de Corr\u00e9lation", 
+                    "Valeurs propres", "Normes des Vecteurs propres", 
+                    "Matrice Q", 
+                    "Nouvelle matrice de donn\u00e9es",
+                    "Suppression", 
+                    "Matrice apr\u00e8s restriction"];
+             
+  keyOrder.forEach((title) => {
+    if (!(title in resultData)) console.log(`Missing key: ${title}, index: ${keyOrder.indexOf(title)}`);
+
+    const content = resultData[title];
     const section = document.createElement("div");
     section.style.marginBottom = "20px";
 
@@ -224,6 +238,32 @@ async function acp_calc() {
   }
 }
 
+async function exportMatrix(format = "csv") {
+  try {
+    const response = await invoke("export_matrix", {
+      matrix: JSON.stringify(m),
+      format: format
+    });
+
+    console.log("Export Result:", response);
+    const exportReport = document.createElement("div");
+    exportReport.style.marginBottom = "10px";
+    exportReport.textContent = `Exported successfully as ${format.toUpperCase()}`;
+
+    document.querySelector("#export-options").appendChild(exportReport);
+    setTimeout(() => exportReport.remove(), 3000);
+
+  } catch (error) {
+    console.error("Export Error", error);
+    const exportReport = document.createElement("div");
+    exportReport.style.marginBottom = "10px";
+    exportReport.textContent = `Export failed as ${error}`;
+    
+    document.querySelector("#export-options").appendChild(exportReport);
+    setTimeout(() => exportReport.remove(), 3000);
+  }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   Threshold = document.querySelector("#threshold");
   ThreshRes = document.querySelector("#thresh-res");
@@ -245,9 +285,9 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   
   document.querySelector("#warning").addEventListener("click", (e) => {
-  e.preventDefault();
-  showWarning("Supported Files Types\n");
-});
+    e.preventDefault();
+    showWarning("Supported Files Types\n");
+  });
 
 
   // Updated to use dialog instead of file input
@@ -258,6 +298,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   document.querySelector("#size-form").addEventListener("submit", (e) => {
     e.preventDefault();
+    document.querySelector("#export-options").style.display = "none";
     generateMatrix();
   });
 
@@ -266,18 +307,27 @@ window.addEventListener("DOMContentLoaded", () => {
 
     for (let i = 0; i < parseInt(InputLines.value); i++) {
       m[i] = [];
-      for(let j = 0; j < parseInt(InputColumns.value); j++) {
+      for (let j = 0; j < parseInt(InputColumns.value); j++) {
         const val = MatrixContainer.querySelector(`input[name="cell-${i}-${j}"]`).value;
         if (val === "") {
           res.textContent = "Please fill all matrix cells.";
+          document.querySelector("#export-options").style.display = "none"; // hide if error
           return;
         }
         m[i][j] = parseFloat(val);
         console.log(`m[${i}][${j}] = ${m[i][j]}`);
       }
     }
-
+    // Show the export options after validation
+    document.querySelector("#export-options").style.display = "block";
+    
     console.log("Matrix m:", m);
     acp_calc();
+  });
+
+  document.querySelector("#export-options").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const format = document.querySelector("#export-format").value;
+    exportMatrix(format);
   });
 });
