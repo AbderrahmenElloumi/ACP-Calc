@@ -69,6 +69,26 @@
           <option value="xlsx">XLSX</option>
           <option value="xls">XLS</option>
         </select>
+        
+        <br>
+        <label for="exported-matrix">Choose Matrix to export</label>
+        <select id="exported-matrix">
+          <option value="Matrice de départ">Matrice de départ</option>
+          <option value="Vecteurs Moyennes">Vecteurs Moyennes</option>
+          <option value="Vecteurs Ecart-types">Vecteurs Ecart-types</option>
+          <option value="Matrice centrée Réduite">Matrice centrée Réduite</option>
+          <option value="Matrice de Corrélation">Matrice de Corrélation</option>
+          <option value="Valeurs propres">Valeurs propres</option>
+          <option value="Normes des Vecteurs propres">Normes des Vecteurs propres</option>
+          <option value="Matrice Q">Matrice Q</option>
+          <option value="Nouvelle matrice de données">Nouvelle matrice de données</option>
+          <option value="Matrice après restriction">Matrice après restriction</option>
+        </select>
+        
+        <br>
+        <label for="export-filename">Filename:</label>
+        <input type="text" id="export-filename"/>
+        
         <button type="submit" id="export-button">Export</button>
       </form>
 

@@ -64,12 +64,9 @@ async fn load_matrix_with_dialog(app_handle: tauri::AppHandle) -> Result<String,
 }
 
 #[tauri::command]
-fn acp(matrix: String, mut threshold: String) -> Result<AcpOutput, String> {
+fn acp(matrix: String, threshold: String) -> Result<AcpOutput, String> {
     let script_path = std::path::Path::new("python/process.py");
-    if threshold.is_empty() {
-        threshold = "0.925".to_string();
-    }
-
+    
     let output = std::process::Command::new("python")
         .arg(script_path)
         .arg(&matrix)
@@ -99,78 +96,87 @@ fn load_matrix_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn export_matrix(matrix: String, format: String) -> Result<String, String> {
-    // Parse the matrix from JSON string
-    let parsed: Vec<Vec<f64>> = serde_json::from_str(&matrix).map_err(|e| e.to_string())?;
-    let filename = format!("exported_matrix.{}", format.to_lowercase());
+fn export_matrix(acpresult: String, format: String, whichmatrix: String, fne: String) -> Result<String, String> {
+    let all_matrices: AcpOutput = serde_json::from_str(&acpresult)
+        .map_err(|e| format!("Failed to parse matrix JSON: {}", e))?;
 
-    match format.to_lowercase().as_str() {
-        // CSV
-        "csv" => {
-            let mut wtr = csv::Writer::from_path(&filename).map_err(|e| e.to_string())?;
-            for row in &parsed {
-                wtr.serialize(row).map_err(|e| e.to_string())?;
-            }
-            wtr.flush().map_err(|e| e.to_string())?;
-        }
+    let selected_section = all_matrices.0.get(&whichmatrix)
+        .ok_or_else(|| format!("Matrix '{}' not found in input", whichmatrix))?;
 
-        // JSON
-        "json" => {
-            let json = serde_json::to_string_pretty(&parsed).map_err(|e| e.to_string())?;
-            std::fs::write(&filename, json).map_err(|e| e.to_string())?;
-        }
+    let filename = format!("{}.{}", fne, format.to_lowercase());
 
-        // TXT (tab-separated)
-        "txt" => {
-            let mut file = File::create(&filename).map_err(|e| e.to_string())?;
-            for row in &parsed {
-                let line: Vec<String> = row.iter().map(|v| v.to_string()).collect();
-                writeln!(file, "{}", line.join("\t")).map_err(|e| e.to_string())?;
-            }
-        }
+    match selected_section {
+        SectionContent::Matrix { columns:_, index:_, data } => {
+            match format.to_lowercase().as_str() {
+                "csv" => {
+                    let mut wtr = csv::Writer::from_path(&filename).map_err(|e| e.to_string())?;
+                    for row in data {
+                        wtr.serialize(row).map_err(|e| e.to_string())?;
+                    }
+                    wtr.flush().map_err(|e| e.to_string())?;
+                }
 
-        // XML
-        "xml" => {
-            let file = File::create(&filename).map_err(|e| e.to_string())?;
+                "json" => {
+                    let json = serde_json::to_string_pretty(data).map_err(|e| e.to_string())?;
+                    std::fs::write(&filename, json).map_err(|e| e.to_string())?;
+                }
 
-            let mut writer = XmlWriter::new_with_indent(file, b' ', 2);
+                "txt" => {
+                    let mut file = File::create(&filename).map_err(|e| e.to_string())?;
+                    for row in data {
+                        let line: Vec<String> = row.iter().map(|v| v.to_string()).collect();
+                        writeln!(file, "{}", line.join("\t")).map_err(|e| e.to_string())?;
+                    }
+                }
 
-            writer.write_event(Event::Start(BytesStart::new("matrix")))
-                .map_err(|e| e.to_string())?;
+                "xml" => {
+                    let file = File::create(&filename).map_err(|e| e.to_string())?;
+                    let mut writer = XmlWriter::new_with_indent(file, b' ', 2);
 
-            for row in &parsed {
-                writer.write_event(Event::Start(BytesStart::new("row"))).map_err(|e| e.to_string())?;
-
-                for val in row {
-                    writer.write_event(Event::Start(BytesStart::new("cell"))).map_err(|e| e.to_string())?;
-                    writer.write_event(Event::Text(BytesText::from_escaped(val.to_string())))
+                    writer.write_event(Event::Start(BytesStart::new("matrix")))
                         .map_err(|e| e.to_string())?;
-                    writer.write_event(Event::End(BytesEnd::new("cell"))).map_err(|e| e.to_string())?;
+
+                    for row in data {
+                        writer.write_event(Event::Start(BytesStart::new("row"))).map_err(|e| e.to_string())?;
+
+                        for val in row {
+                            writer.write_event(Event::Start(BytesStart::new("cell"))).map_err(|e| e.to_string())?;
+                            writer.write_event(Event::Text(BytesText::from_escaped(val.to_string())))
+                                .map_err(|e| e.to_string())?;
+                            writer.write_event(Event::End(BytesEnd::new("cell"))).map_err(|e| e.to_string())?;
+                        }
+
+                        writer.write_event(Event::End(BytesEnd::new("row"))).map_err(|e| e.to_string())?;
+                    }
+
+                    writer.write_event(Event::End(BytesEnd::new("matrix"))).map_err(|e| e.to_string())?;
                 }
 
-                writer.write_event(Event::End(BytesEnd::new("row"))).map_err(|e| e.to_string())?;
-            }
+                "xlsx" | "xlsm" | "ods" | "xls" => {
+                    let mut book = umya_spreadsheet::new_file();
+                    let sheet = book.get_sheet_by_name_mut("Sheet1").unwrap();
 
-            writer.write_event(Event::End(BytesEnd::new("matrix"))).map_err(|e| e.to_string())?;
-        }
+                    for (i, row) in data.iter().enumerate() {
+                        for (j, val) in row.iter().enumerate() {
+                            let col_letter = ((b'A' + j as u8) as char).to_string();
+                            let cell_ref = format!("{}{}", col_letter, i + 1);
+                            sheet.get_cell_mut(cell_ref.as_str()).set_value(val.to_string());
+                        }
+                    }
 
-        // XLSX / XLSM / ODS / XLS (using umya-spreadsheet)
-        "xlsx" | "xlsm" | "ods" | "xls" => {
-            let mut book = umya_spreadsheet::new_file();
-            let sheet = book.get_sheet_by_name_mut("Sheet1").unwrap();
-
-            for (i, row) in parsed.iter().enumerate() {
-                for (j, val) in row.iter().enumerate() {
-                    let col_letter = ((b'A' + j as u8) as char).to_string(); // A, B, C, ...
-                    let cell_ref = format!("{}{}", col_letter, i + 1);
-                    sheet.get_cell_mut(cell_ref.as_str()).set_value(val.to_string());
+                    umya_spreadsheet::writer::xlsx::write(&book, &filename).map_err(|e| e.to_string())?;
                 }
-            }
 
-            umya_spreadsheet::writer::xlsx::write(&book, &filename).map_err(|e| e.to_string())?;
+                _ => return Err(format!("Unsupported export format: {}", format)),
+            }
         }
 
-        _ => return Err(format!("Unsupported export format: {}", format)),
+        SectionContent::Messages(_) => {
+            return Err(format!(
+                "'{}' is not a matrix and cannot be exported in this format.",
+                whichmatrix
+            ));
+        }
     }
 
     Ok(filename)

@@ -9,6 +9,7 @@ let InputLines;
 let InputColumns;
 let MatrixContainer;
 
+let data = null;
 let m = [];
 let res;
 
@@ -42,11 +43,12 @@ function generateMatrix() {
 }
 
 function renderResult(resultData) {
+  data = resultData;
   res.innerHTML = ""; // Clear old result
 
   const keyOrder = ["Matrice de d\u00e9part", 
                     "Vecteurs Moyennes",
-                    "Vecteurs Ecart-types",
+                    "Vecteurs Ecart-types", 
                     "Matrice centr\u00e9e R\u00e9duite", 
                     "Matrice de Corr\u00e9lation", 
                     "Valeurs propres", "Normes des Vecteurs propres", 
@@ -224,10 +226,10 @@ async function loadMatrixWithDialog() {
   }
 }
 
-async function acp_calc() {
+async function acp_calc(threshold = 0.925) {
   // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
   try {
-    const response = await invoke("acp", { matrix: JSON.stringify(m), threshold: Threshold.value });
+    const response = await invoke("acp", { matrix: JSON.stringify(m), threshold: threshold });
 
     console.log("ACP Result:", response);
     // res.textContent = JSON.stringify(response, null, 2); 
@@ -238,11 +240,20 @@ async function acp_calc() {
   }
 }
 
-async function exportMatrix(format = "csv") {
+async function exportMatrix(format = "csv", whichMatrix = "Matrice apr\u00e8s restriction", fileName = "DataAfterACP") {
   try {
+    console.log("Exporting with args:", {
+      acpresult: JSON.stringify(data),
+      format: format,
+      which_matrix: whichMatrix,
+      file_name: fileName
+    });
+    
     const response = await invoke("export_matrix", {
-      matrix: JSON.stringify(m),
-      format: format
+      acpresult: JSON.stringify(data),
+      format: format,
+      whichmatrix: whichMatrix,
+      fne: fileName
     });
 
     console.log("Export Result:", response);
@@ -322,12 +333,15 @@ window.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#export-options").style.display = "block";
     
     console.log("Matrix m:", m);
-    acp_calc();
+    acp_calc(Threshold.value);
   });
 
   document.querySelector("#export-options").addEventListener("submit", (e) => {
     e.preventDefault();
     const format = document.querySelector("#export-format").value;
-    exportMatrix(format);
+    const whichMatrix = document.querySelector("#exported-matrix").value;
+    const fileName = document.querySelector("#export-filename").value;
+    console.log(`Exporting as ${format} for ${whichMatrix} with filename ${fileName}`);
+    exportMatrix(format, whichMatrix, fileName);
   });
 });

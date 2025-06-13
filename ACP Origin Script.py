@@ -40,16 +40,13 @@ def create_dynamic_df(data, rows, cols, srow, scol):
 
 # n = int(input("Donner le Nbre d'individus: "))
 # p = int(input("Donner le Nbre de variables: "))
-n = 4
-p = 2
 
 #*Gérération de la matrice de données
 # M = np.random.randint(1000, size=(n, p))
 # M = np.round(M, 3) * 1000
-M = np.array([[2, 2],
-              [6, 2],
-              [6, 4],
-              [10, 4]])
+M = np.random.randint(100, size=(3, 5))
+n = M.shape[0]  # Nombre d'individus
+p = M.shape[1]  # Nombre de variables
 
 # M = np.array([[1,2,3],
 #               [4,5,6],
