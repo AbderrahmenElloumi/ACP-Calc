@@ -8,6 +8,8 @@
 import numpy as np
 from pandas import DataFrame
 from tabulate import tabulate
+from time import time
+from datetime import timedelta
 
 
 def cov(X):
@@ -38,19 +40,19 @@ def create_dynamic_df(data, rows, cols, srow, scol):
 
 #!Principal:
 
+start = time()
+
 # n = int(input("Donner le Nbre d'individus: "))
 # p = int(input("Donner le Nbre de variables: "))
 
 #*Gérération de la matrice de données
 # M = np.random.randint(1000, size=(n, p))
 # M = np.round(M, 3) * 1000
-M = np.random.randint(100, size=(3, 5))
+# M = np.random.randint(100, size=(3, 5))
+
+M = np.arange(1, 10001).reshape(100, 100)
 n = M.shape[0]  # Nombre d'individus
 p = M.shape[1]  # Nombre de variables
-
-# M = np.array([[1,2,3],
-#               [4,5,6],
-#               [7,8,9]])
 
 dfM = create_dynamic_df(M, n, p, "Individu ", "X")
 print("\n----------Matrice de départ----------")
@@ -113,5 +115,5 @@ dfY = restrict(dfY, valeurs_propres, 0.925, "X")
 print("\n-----------Matrice après restriction----------")
 print(tabulate(dfY, headers='keys', tablefmt='fancy_grid'))
 
-
+print(f"Execution time: {timedelta(seconds=time() - start)}")
 
